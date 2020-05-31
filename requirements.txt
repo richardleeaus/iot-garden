@@ -1,0 +1,10 @@
+pep8
+azure-iot-device
+pubnub
+gpiozero
+python-dotenv
+adafruit-mcp3008
+opencensus-ext-azure
+weather-au
+RPi.GPIO
+Adafruit_DHT
