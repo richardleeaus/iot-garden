@@ -14,11 +14,8 @@ class MoistureSensor(object):
             clk=clk, cs=cs, miso=miso, mosi=mosi)
         # Define sensor channel
         self.moisture_channel = channel
-
-        # # Open SPI bus
-        # spi = spidev.SpiDev()
-        # spi.open(0,0)
-        # spi.max_speed_hz=1000000
+        self.max_humidity_reading = 650  # Dry in air
+        self.min_humidity_reading = 385  # In water
 
     # Function to read SPI data from MCP3008 chip
     # Channel must be an integer 0-7
@@ -39,3 +36,12 @@ class MoistureSensor(object):
 
     def GetScaledPercent(self):
         return self.ConverttoPercentScaled(self.ReadChannel())
+
+    def GetScaledMaxValue(self):
+        return self.max_humidity_reading - self.min_humidity_reading
+
+    def GetMaxHumidityReading(self):
+        return self.max_humidity_reading
+
+    def GetMinHunidityReading(self):
+        return self.min_humidity_reading

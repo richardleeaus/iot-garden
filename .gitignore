@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+watering.db
+
 # C extensions
 *.so
 

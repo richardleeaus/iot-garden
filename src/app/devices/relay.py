@@ -19,3 +19,14 @@ class Relay(object):
             time.sleep(5)
         finally:
             self.relay.off()
+
+    def trigger(self, seconds):
+        try:
+            print("Water pump on")
+            self.relay.on()
+            time.sleep(seconds)
+            self.relay.off()
+            print("Water pump off")
+            time.sleep(5)
+        finally:
+            self.relay.off()
