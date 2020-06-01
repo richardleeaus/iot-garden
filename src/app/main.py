@@ -24,6 +24,8 @@ logger.addHandler(
             os.getenv('log_analytics_instrumentation_key'))))
 logger.setLevel(level=logging.INFO)
 
+# Using a dikt as we have multiple analogue sensors, and we may choose
+# one over the other
 analogue_devices = {
     "mcp3008": MoistureSensor(18, 23, 24, 25, 4)
 }
@@ -74,10 +76,11 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
 
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
-        if moisture_percent_scaled <= 60 and localdb.get_pump_seconds_duration(5) == 0:
+        if moisture_percent_scaled <= 60 and localdb.get_pump_seconds_duration_in_last(5) == 0:
             water_plant(readings, localdb, historiandb, pump)
 
         # Wait before repeating loop
+        print('Waiting for {} seconds'.format(moisture_sensor.delay))
         time.sleep(moisture_sensor.delay)
 
 
@@ -86,6 +89,6 @@ if __name__ == "__main__":
         localdb=WaterDatabase(), 
         historiandb=TimescaleDB(),
         moisture_sensor=analogue_devices.get(os.getenv('analogue_device'), 'mcp3008'),
-        pump=Relay(16),
-        dht22=DHT22(12)
+        pump=Relay(os.getenv('pin_number_pump')),
+        dht22=DHT22(os.getenv('pin_number_dht'))
     )

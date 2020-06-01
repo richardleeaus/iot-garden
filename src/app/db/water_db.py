@@ -27,7 +27,7 @@ class WaterDatabase(object):
             '''.format(water_ml, pump_on_seconds))
         self.connection.commit()
 
-    def get_pump_seconds_duration(self, minutes):
+    def get_pump_seconds_duration_in_last(self, minutes):
         c = self.connection.cursor()
         c.execute('''
             SELECT SUM(ifnull(pump_on_seconds,0))
