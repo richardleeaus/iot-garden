@@ -32,7 +32,7 @@ class WaterDatabase(object):
         c.execute('''
             SELECT SUM(ifnull(pump_on_seconds,0))
             FROM WATER_LOG
-            WHERE water_datetime <
+            WHERE water_datetime >
                 datetime(CURRENT_TIMESTAMP,'-{} minutes')
             '''.format(minutes))
         value = c.fetchone()[0]
