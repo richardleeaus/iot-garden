@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import logging
 import os
+import psycopg2
 
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from dotenv import load_dotenv, find_dotenv
@@ -9,9 +10,13 @@ from devices.mcp3008 import MoistureSensor
 from devices.dht22 import DHT22
 from devices.relay import Relay
 from db.water_db import WaterDatabase
+from psycopg2.extras import execute_values
+from db.historian import TimescaleDB
+from datetime import datetime
+
+PUMP_SECONDS = 5
 
 load_dotenv(find_dotenv())
-
 logger = logging.getLogger(__name__)
 logger.addHandler(
     AzureLogHandler(
@@ -23,30 +28,26 @@ analogue_devices = {
     "mcp3008": MoistureSensor(18, 23, 24, 25, 4)
 }
 
-PUMP_SECONDS = 5
-MOISTURE_SENSOR = analogue_devices.get(os.getenv('analogue_device'), 'mcp3008')
-DHT22_SENSOR = DHT22(12)
-pump = Relay(16)
 
+def water_plant(readings, localdb, historiandb, pump):
+    print('Watering plant!')
+    pump.trigger(PUMP_SECONDS)
+    records = []
+    for key, value in readings['custom_dimensions'].items():
+        records.append((datetime.utcnow(), key, value))
 
-def main():
-    db = WaterDatabase()
+    # Log into remote and local DB
+    historiandb.insert_sensor_records(records)
+    localdb.create_water_log(0, PUMP_SECONDS)
+
+def main(localdb, historiandb, moisture_sensor, pump, dht22):
 
     while True:
 
         # Read the moisture sensor data
-        moisture_level = MOISTURE_SENSOR.ReadChannel()
-        moisture_percent_scaled = MOISTURE_SENSOR.GetScaledPercent()
-        humidity, temperature = DHT22_SENSOR.take_reading()
-
-        # Print out results
-        print("--------------------------------------------")
-        print("Humidity:\t {0:0.1f}%".format(humidity))
-        print("Tempearture:\t {0:0.1f}*C".format(temperature))
-        print("Moisture:\t {}%".format(moisture_percent_scaled))
-        print("Raw:\t\t {}".format(moisture_level))
-        print("Max value:\t {:0.1f}".format(
-                MOISTURE_SENSOR.GetScaledMaxValue()))
+        moisture_level = moisture_sensor.ReadChannel()
+        moisture_percent_scaled = moisture_sensor.GetScaledPercent()
+        humidity, temperature = dht22.take_reading()
 
         readings = {
             'custom_dimensions': {
@@ -55,25 +56,36 @@ def main():
                 'soil_analogue_raw_value':
                     "{}".format(moisture_level),
                 'soil_convert_max_value':
-                    MOISTURE_SENSOR.GetScaledMaxValue(),
+                    moisture_sensor.GetScaledMaxValue(),
                 'soil_sensor_in_water_reading':
-                    MOISTURE_SENSOR.GetMinHunidityReading(),
+                    moisture_sensor.GetMinHunidityReading(),
                 'soil_sensor_air_reading':
-                    MOISTURE_SENSOR.GetMaxHumidityReading(),
+                    moisture_sensor.GetMaxHumidityReading(),
                 'humidity': humidity,
                 'temperature': temperature
             }
         }
         logger.info('Plant log', extra=readings)
 
-        if moisture_percent_scaled <= 60 and db.get_pump_seconds_duration(5) == 0:
-            print('Trigger!')
-            pump.trigger(PUMP_SECONDS)
-            db.create_water_log(0, PUMP_SECONDS)
+        # Print out values
+        print("--------------------------------------------")
+        for key, value in readings['custom_dimensions'].items():
+            print("{}:\t\t {:0.1f}".format(key, float(value)))
+
+        # Only water if there is less than % <moisture>, and have you haven't
+        # watered in the last <duration>
+        if moisture_percent_scaled <= 60 and localdb.get_pump_seconds_duration(5) == 0:
+            water_plant(readings, localdb, historiandb, pump)
 
         # Wait before repeating loop
-        time.sleep(MOISTURE_SENSOR.delay)
+        time.sleep(moisture_sensor.delay)
 
 
 if __name__ == "__main__":
-    main()
+    main(
+        localdb=WaterDatabase(), 
+        historiandb=TimescaleDB(),
+        moisture_sensor=analogue_devices.get(os.getenv('analogue_device'), 'mcp3008'),
+        pump=Relay(16),
+        dht22=DHT22(12)
+    )
