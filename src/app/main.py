@@ -32,15 +32,11 @@ analogue_devices = {
 }
 
 
-def water_plant(readings, localdb, historiandb, pump):
+def water_plant(readings, localdb, pump):
     print('Watering plant!')
     pump.trigger(PUMP_SECONDS)
-    records = []
-    for key, value in readings['custom_dimensions'].items():
-        records.append((datetime.utcnow(), key, value))
 
-    # Log into remote and local DB
-    historiandb.insert_sensor_records(records)
+    # create local cache
     localdb.create_water_log(0, PUMP_SECONDS)
 
 def main(localdb, historiandb, moisture_sensor, pump, dht22):
@@ -75,10 +71,16 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
         for key, value in readings['custom_dimensions'].items():
             print("{}:\t\t {:0.1f}".format(key, float(value)))
 
+        # Log into remote DB
+        records = []
+        for key, value in readings['custom_dimensions'].items():
+            records.append((datetime.utcnow(), key, value))
+        historiandb.insert_sensor_records(records)
+
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
         if moisture_percent_scaled <= 60 and localdb.get_pump_seconds_duration_in_last(WATERING_DELAY_MINUTES) == 0:
-            water_plant(readings, localdb, historiandb, pump)
+            water_plant(readings, localdb, pump)
 
         # Wait before repeating loop
         print('Waiting for {} seconds'.format(moisture_sensor.delay))
