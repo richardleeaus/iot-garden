@@ -33,7 +33,7 @@ class WaterDatabase(object):
             SELECT SUM(ifnull(pump_on_seconds,0))
             FROM WATER_LOG
             WHERE water_datetime <
-                time(CURRENT_TIMESTAMP,'-{} minutes')
+                datetime(CURRENT_TIMESTAMP,'-{} minutes')
             '''.format(minutes))
         value = c.fetchone()[0]
         print("Fetch sqlite3 value is: {}".format(value))
