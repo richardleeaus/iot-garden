@@ -4,6 +4,7 @@ import logging
 import os
 import psycopg2
 
+from tabulate import tabulate
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from dotenv import load_dotenv, find_dotenv
 from devices.mcp3008 import MoistureSensor
@@ -59,9 +60,12 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
         logger.info('Plant log', extra=readings)
 
         # Print out values
-        print("--------------------------------------------")
-        for key, value in readings['custom_dimensions'].items():
-            print("{}:\t\t {:0.1f}".format(key, float(value)))
+        print(
+            tabulate(
+                tabular_data=list(readings['custom_dimensions'].items()), 
+                headers=['Measure', 'Value'], 
+                tablefmt="simple"))
+        print("")
 
         # Log into remote DB
         records = []
