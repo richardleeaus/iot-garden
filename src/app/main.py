@@ -75,7 +75,8 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
 
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
-        if moisture_percent_scaled <= 60 and localdb.get_pump_seconds_duration_in_last(WATERING_DELAY_MINUTES) == 0:
+        if moisture_percent_scaled <= 60 and \
+                localdb.get_pump_seconds_duration_in_last(WATERING_DELAY_MINUTES) == 0:
             water_plant(readings, localdb, pump)
 
         # Wait before repeating loop
