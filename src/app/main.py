@@ -52,14 +52,6 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
             'custom_dimensions': {
                 'soil_moisture_percent':
                     "{}".format(moisture_percent_scaled),
-                # 'soil_analogue_raw_value':
-                #     "{}".format(moisture_level),
-                # 'soil_convert_max_value':
-                #     moisture_sensor.GetScaledMaxValue(),
-                # 'soil_sensor_in_water_reading':
-                #     moisture_sensor.GetMinHunidityReading(),
-                # 'soil_sensor_air_reading':
-                #     moisture_sensor.GetMaxHumidityReading(),
                 'humidity': humidity,
                 'temperature': temperature
             }
