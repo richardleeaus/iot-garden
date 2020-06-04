@@ -80,7 +80,7 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
             water_plant(readings, localdb, pump)
 
         # Wait before repeating loop
-        print('Waiting for {} seconds'.format(moisture_sensor.delay))
+        logger.info('Waiting for {} seconds'.format(moisture_sensor.delay))
         time.sleep(moisture_sensor.delay)
 
 
