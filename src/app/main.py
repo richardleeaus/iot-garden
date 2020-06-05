@@ -24,7 +24,7 @@ logger.addHandler(
     AzureLogHandler(
         connection_string='InstrumentationKey={}'.format(
             os.getenv('log_analytics_instrumentation_key'))))
-logger.setLevel(level=logging.INFO)
+logger.setLevel(level=os.environ.get('log_level'))
 
 # Using a dikt as we have multiple analogue sensors, and we may choose
 # one over the other
@@ -39,6 +39,7 @@ def water_plant(readings, localdb, pump):
 
     # create local cache
     localdb.create_water_log(0, PUMP_SECONDS)
+
 
 def main(localdb, historiandb, moisture_sensor, pump, dht22):
 
@@ -68,15 +69,14 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
         print("")
 
         # Log into remote DB
-        records = []
-        for key, value in readings['custom_dimensions'].items():
-            records.append((datetime.utcnow(), key, value))
+        records = [(datetime.utcnow(), key, value) for key, value in readings['custom_dimensions'].items()]
         historiandb.insert_sensor_records(records)
 
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
         if moisture_percent_scaled <= 60 and \
-                localdb.get_pump_seconds_duration_in_last(WATERING_DELAY_MINUTES) == 0:
+                localdb.get_pump_seconds_duration_in_last(
+                    WATERING_DELAY_MINUTES) == 0:
             water_plant(readings, localdb, pump)
 
         # Wait before repeating loop
@@ -86,9 +86,10 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
 
 if __name__ == "__main__":
     main(
-        localdb=WaterDatabase(), 
+        localdb=WaterDatabase(),
         historiandb=TimescaleDB(),
-        moisture_sensor=analogue_devices.get(os.getenv('analogue_device'), 'mcp3008'),
+        moisture_sensor=analogue_devices.get(
+            os.getenv('analogue_device'), 'mcp3008'),
         pump=Relay(os.getenv('pin_number_pump')),
         dht22=DHT22(os.getenv('pin_number_dht'))
     )
