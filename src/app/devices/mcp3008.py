@@ -1,4 +1,5 @@
 import Adafruit_MCP3008
+import os
 
 
 class MoistureSensor(object):
@@ -9,11 +10,15 @@ class MoistureSensor(object):
     # Define delay between readings
     delay = 60
 
-    def __init__(self, clk, miso, mosi, cs, channel):
+    def __init__(self):
         self.mcp = Adafruit_MCP3008.MCP3008(
-            clk=clk, cs=cs, miso=miso, mosi=mosi)
+            clk=int(os.environ.get("pin_clk")),
+            cs=int(os.environ.get("pin_cs")),
+            miso=int(os.environ.get("pin_miso")),
+            mosi=int(os.environ.get("pin_mosi"))
+        )
         # Define sensor channel
-        self.moisture_channel = channel
+        self.moisture_channel = int(os.environ.get("analogue_channel"))
         self.max_humidity_reading = 650  # Dry in air
         self.min_humidity_reading = 385  # In water
 

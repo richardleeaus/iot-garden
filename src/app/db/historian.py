@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 class TimescaleDB(object):
     def __init__(self):
         self.conn = psycopg2.connect(
-            dbname="postgres",
-            user="panickyRaisins4@gardendb-rl",
+            dbname=os.environ.get("tsdb_dbname"),
+            user=os.environ.get("tsdb_user"),
             password=os.environ.get("tsdb_password"),
-            host="gardendb-rl.postgres.database.azure.com"
+            host=os.environ.get("tsdb_host")
         )
 
     def insert_sensor_records(self, records):

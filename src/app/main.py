@@ -29,7 +29,7 @@ logger.setLevel(level=os.environ.get('log_level'))
 # Using a dikt as we have multiple analogue sensors, and we may choose
 # one over the other
 analogue_devices = {
-    "mcp3008": MoistureSensor(18, 23, 24, 25, 4)
+    "mcp3008": MoistureSensor()
 }
 
 
@@ -63,8 +63,8 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
         # Print out values
         print(
             tabulate(
-                tabular_data=list(readings['custom_dimensions'].items()), 
-                headers=['Measure', 'Value'], 
+                tabular_data=list(readings['custom_dimensions'].items()),
+                headers=['Measure', 'Value'],
                 tablefmt="simple"))
         print("")
 
