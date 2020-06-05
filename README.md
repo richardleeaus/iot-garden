@@ -21,8 +21,54 @@ pin_cs=25
 analogue_channel=4
 ```
 
+## Install Python 3.6
+
+If you have raspbian, you may have a old version of Python which isn't compatiable.
+
+```bash
+$ sudo apt-get update
+
+$ sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev
+
+$ wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz
+
+$ sudo tar zxf Python-3.6.8.tgz
+
+$ cd Python-3.6.8
+
+$ ./configure
+
+$ make -j 4
+
+$ make altinstall
+
+$ python3.6 -V
+```
+
 ## Set up your Virtual Environment
 
-## Create IoT Hub and BLOB Storage
+```bash
+$ python3.6 -m venv ~/GIT/iot-garden/env
 
+$ source env/bin/activate
+
+$ pip install -r requirements.txt --default-timeout=100
+```
+
+## Setup TimescaleDB
+
+TimescaleDB is a time series database and i used to store the telemetry created from the device.
+
+## Setup Grafana
+
+Grafana is an open-source time series visualisation tool
+
+## Build into Docker container
+
+
+# Just run with Docker
+
+```bash
+$ docker-compose up
+```
 
