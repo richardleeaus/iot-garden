@@ -136,9 +136,9 @@ async def worker():
                 tablefmt="simple"))
         print("")
 
-        # Send data to Historian
-        records = [(datetime.utcnow(), key, value) for key, value in readings['custom_dimensions'].items()]
-        historiandb.insert_sensor_records(records)
+        # Data is sent to the historian via the Azure Function in Azure
+        # records = [(datetime.utcnow(), key, value) for key, value in readings['custom_dimensions'].items()]
+        # historiandb.insert_sensor_records(records)
 
         # Send data to IoT Hub
         await asyncio.gather(send_test_message(dict(readings['custom_dimensions'].items())))
@@ -148,7 +148,7 @@ async def worker():
         if readings['custom_dimensions']['soil_moisture_percent'] <= 60 and \
                 localdb.get_pump_seconds_duration_in_last(
                     WATERING_DELAY_MINUTES) == 0:
-            water_plant(readings, localdb, pump)
+            water_plant(readings)
 
         # Wait before repeating loop
         logger.info('Waiting for {} seconds'.format(moisture_sensor.delay))
