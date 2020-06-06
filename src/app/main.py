@@ -103,7 +103,6 @@ def init():
 
     conn_str = os.getenv("iot_connection_string")
     device_client = IoTHubDeviceClient.create_from_connection_string(conn_str)
-    IoTHubDeviceClient.create_from_connection_string()
 
     moisture_sensor = MoistureSensor()
     pump = Relay()
@@ -113,7 +112,8 @@ def init():
 
 
 async def send_test_message(i):
-    msg = Message(json.dumps(i.add(("timestamp": datetime.utcnow()))))
+    i["timestamp"] = str(datetime.utcnow())
+    msg = Message(json.dumps(i))
     msg.content_encoding = "utf-8"
     msg.content_type = "application/json"
     msg.message_id = uuid.uuid4()
