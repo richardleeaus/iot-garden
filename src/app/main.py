@@ -112,7 +112,7 @@ def init():
 
 async def send_test_message(i):
     print("sending message #" + str(i))
-    msg = Message(i)
+    msg = Message(str(i))
     msg.message_id = uuid.uuid4()
     await device_client.send_message(msg)
     print("done sending message #" + str(i))
@@ -138,7 +138,7 @@ async def worker():
         historiandb.insert_sensor_records(records)
 
         # Send data to IoT Hub
-        await asyncio.gather(send_test_message(readings))
+        await asyncio.gather(send_test_message(dict(readings['custom_dimensions'].items())))
 
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
