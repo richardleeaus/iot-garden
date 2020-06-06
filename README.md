@@ -71,6 +71,10 @@ TimescaleDB is a time series database and i used to store the telemetry created 
 
 Grafana is an open-source time series visualisation tool
 
+## Setup IoT Hub
+
+We use IoT Hub to remotely control the watering system and receive device messages
+
 ## Build into Docker container
 
 
