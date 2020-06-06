@@ -21,7 +21,7 @@ pin_cs=25
 analogue_channel=4
 ```
 
-## Install Python 3.6
+## Install Python 3.7
 
 If you have raspbian, you may have a old version of Python which isn't compatiable.
 
@@ -30,25 +30,33 @@ $ sudo apt-get update
 
 $ sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev
 
-$ wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz
+$ wget https://www.python.org/ftp/python/3.7.7/Python-3.7.7.tgz
 
-$ sudo tar zxf Python-3.6.8.tgz
+$ sudo tar zxf Python-3.7.7.tgz
 
-$ cd Python-3.6.8
+$ cd Python-3.7.7
 
-$ ./configure
+$ sudo ./configure
 
-$ make -j 4
+$ sudo make -j 4
 
-$ make altinstall
+$ sudo make altinstall
 
-$ python3.6 -V
+$ python3.7 -V
+```
+
+## Install psycopg2
+```bash
+git clone https://github.com/psycopg/psycopg2
+cd psycopg2
+`which python3.7` setup.py build
+`which python3.7` setup.py install
 ```
 
 ## Set up your Virtual Environment
 
 ```bash
-$ python3.6 -m venv ~/GIT/iot-garden/env
+$ python3.7 -m venv ~/GIT/iot-garden/env
 
 $ source env/bin/activate
 

@@ -3,6 +3,10 @@ import time
 import logging
 import os
 import psycopg2
+import asyncio
+import threading
+import functools
+import uuid
 
 from tabulate import tabulate
 from opencensus.ext.azure.log_exporter import AzureLogHandler
@@ -14,6 +18,8 @@ from db.water_db import WaterDatabase
 from psycopg2.extras import execute_values
 from db.historian import TimescaleDB
 from datetime import datetime
+from azure.iot.device.aio import IoTHubDeviceClient
+from azure.iot.device import MethodResponse, Message
 
 PUMP_SECONDS = 5
 WATERING_DELAY_MINUTES = 5
@@ -26,14 +32,42 @@ logger.addHandler(
             os.getenv('log_analytics_instrumentation_key'))))
 logger.setLevel(level=os.environ.get('log_level'))
 
-# Using a dikt as we have multiple analogue sensors, and we may choose
-# one over the other
-analogue_devices = {
-    "mcp3008": MoistureSensor()
-}
+
+async def pump_water_listener(device_client):
+    while True:
+        method_request = await device_client.receive_method_request(
+            "pump_water"
+        )  # Wait for method1 calls
+
+        water_plant(get_readings())
+
+        payload = {"result": True}  # set response payload
+        status = 200  # set return status code
+
+        method_response = MethodResponse.create_from_method_request(
+            method_request, status, payload
+        )
+        await device_client.send_method_response(method_response)
 
 
-def water_plant(readings, localdb, pump):
+async def get_plant_metrics_listener(device_client):
+    while True:
+        method_request = await device_client.receive_method_request(
+            "get_plant_metrics"
+        )  # Wait for method1 calls
+
+        readings = get_readings()
+        payload = {"result": True, "data": readings}  # set response payload
+        status = 200  # set return status code
+        print("Sending plant metrics to IoT Hub")
+
+        method_response = MethodResponse.create_from_method_request(
+            method_request, status, payload
+        )
+        await device_client.send_method_response(method_response)
+
+
+def water_plant(readings):
     print('Watering plant!')
     pump.trigger(PUMP_SECONDS)
 
@@ -41,24 +75,55 @@ def water_plant(readings, localdb, pump):
     localdb.create_water_log(0, PUMP_SECONDS)
 
 
-def main(localdb, historiandb, moisture_sensor, pump, dht22):
+def get_readings():
+    # Read the moisture sensor data
+    moisture_level = moisture_sensor.ReadChannel()
+    moisture_percent_scaled = moisture_sensor.GetScaledPercent()
+    humidity, temperature = dht22.take_reading()
+
+    readings = {
+        'custom_dimensions': {
+            'soil_moisture_percent': moisture_percent_scaled,
+            'humidity': humidity,
+            'temperature': temperature
+        }
+    }
+    logger.info('Plant log', extra=readings)
+    return readings
+
+
+def init():
+    global moisture_sensor
+    global pump
+    global dht22
+    global localdb
+    global historiandb
+    global device_client
+
+    conn_str = os.getenv("iot_connection_string")
+    device_client = IoTHubDeviceClient.create_from_connection_string(conn_str)
+
+    moisture_sensor = MoistureSensor()
+    pump = Relay()
+    dht22 = DHT22()
+    localdb = WaterDatabase()
+    historiandb = TimescaleDB()
+
+
+async def send_test_message(i):
+    print("sending message #" + str(i))
+    msg = Message(i)
+    msg.message_id = uuid.uuid4()
+    await device_client.send_message(msg)
+    print("done sending message #" + str(i))
+
+
+async def worker():
 
     while True:
 
-        # Read the moisture sensor data
-        moisture_level = moisture_sensor.ReadChannel()
-        moisture_percent_scaled = moisture_sensor.GetScaledPercent()
-        humidity, temperature = dht22.take_reading()
-
-        readings = {
-            'custom_dimensions': {
-                'soil_moisture_percent':
-                    "{}".format(moisture_percent_scaled),
-                'humidity': humidity,
-                'temperature': temperature
-            }
-        }
-        logger.info('Plant log', extra=readings)
+        # Get readings
+        readings = get_readings()
 
         # Print out values
         print(
@@ -68,13 +133,16 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
                 tablefmt="simple"))
         print("")
 
-        # Log into remote DB
+        # Send data to Historian
         records = [(datetime.utcnow(), key, value) for key, value in readings['custom_dimensions'].items()]
         historiandb.insert_sensor_records(records)
 
+        # Send data to IoT Hub
+        await asyncio.gather(send_test_message(readings))
+
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
-        if moisture_percent_scaled <= 60 and \
+        if readings['custom_dimensions']['soil_moisture_percent'] <= 60 and \
                 localdb.get_pump_seconds_duration_in_last(
                     WATERING_DELAY_MINUTES) == 0:
             water_plant(readings, localdb, pump)
@@ -84,12 +152,32 @@ def main(localdb, historiandb, moisture_sensor, pump, dht22):
         time.sleep(moisture_sensor.delay)
 
 
-if __name__ == "__main__":
-    main(
-        localdb=WaterDatabase(),
-        historiandb=TimescaleDB(),
-        moisture_sensor=analogue_devices.get(
-            os.getenv('analogue_device'), 'mcp3008'),
-        pump=Relay(os.getenv('pin_number_pump')),
-        dht22=DHT22(os.getenv('pin_number_dht'))
+async def main():
+
+    init()
+
+    await device_client.connect()
+
+    listeners = asyncio.gather(
+        get_plant_metrics_listener(device_client),
+        pump_water_listener(device_client),
+        worker(),
     )
+
+    # define behavior for halting the application
+    def stdin_listener():
+        while True:
+            selection = input("Press Q to quit\n")
+            if selection == "Q" or selection == "q":
+                print("Quitting...")
+                break
+
+    loop = asyncio.get_running_loop()
+    user_finished = loop.run_in_executor(None, stdin_listener)
+    await user_finished
+
+    listeners.cancel()
+    await device_client.disconnect()
+
+if __name__ == "__main__":
+    asyncio.run(main())

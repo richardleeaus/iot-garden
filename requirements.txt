@@ -7,5 +7,4 @@ opencensus-ext-azure
 weather-au
 RPi.GPIO
 Adafruit_DHT
-psycopg2
 tabulate

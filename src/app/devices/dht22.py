@@ -1,11 +1,13 @@
 import Adafruit_DHT
-import board
+import os
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 
 class DHT22(object):
 
-    def __init__(self, pin):
-        self.pin = pin
+    def __init__(self):
+        self.pin = os.getenv('pin_number_dht')
         self.dht_sensor = Adafruit_DHT.DHT22
 
     def take_reading(self):
