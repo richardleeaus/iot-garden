@@ -151,6 +151,9 @@ async def worker():
                 localdb.get_pump_seconds_duration_in_last(
                     WATERING_DELAY_MINUTES) == 0:
             water_plant(readings)
+            await asyncio.gather(send_test_message({
+                "water_duration_seconds": PUMP_SECONDS
+            }))
 
         # Wait before repeating loop
         logger.info('Waiting for {} seconds'.format(moisture_sensor.delay))
