@@ -1,5 +1,17 @@
 # IoT Garden
 
+## Project Repositories
+
+| Repository        | Description                                                                                        | Link |   |   |
+|-------------------|----------------------------------------------------------------------------------------------------|------|---|---|
+| iot-garden-azfunc | Python Azure Function used to insert data into TimescaleDB from IoT Hub. Event triggered.          |      |   |   |
+| iot-garden        | Base repository for Raspberry PI solution. Uses Azure IoT Device SDK and GPIO for reading sensors. |      |   |   |
+|                   |                                                                                                    |      |   |   |
+
+## Architecture
+
+## Raspberry Pi Pictures
+
 # Getting started
 ## Set up your environment (.env) file
 

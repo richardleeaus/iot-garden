@@ -34,38 +34,49 @@ logger.addHandler(
 logger.setLevel(level=os.environ.get('log_level'))
 
 
-async def pump_water_listener(device_client):
+
+async def pump_water_command(device_client, method_request):
+    # method_request = await device_client.receive_method_request(
+    #     "pump_water"
+    # )  # Wait for method1 calls
+
+    water_plant(get_readings())
+
+    payload = {"result": True}  # set response payload
+    status = 200  # set return status code
+
+    method_response = MethodResponse.create_from_method_request(
+        method_request, status, payload
+    )
+    await device_client.send_method_response(method_response)
+
+
+async def get_plant_metrics_command(device_client, method_request):
+    # method_request = await device_client.receive_method_request(
+    #     "get_plant_metrics"
+    # )  # Wait for method1 calls
+
+    readings = get_readings()
+    payload = {"result": True, "data": readings}  # set response payload
+    status = 200  # set return status code
+    print("Sending plant metrics to IoT Hub")
+
+    method_response = MethodResponse.create_from_method_request(
+        method_request, status, payload
+    )
+    await device_client.send_method_response(method_response)
+
+
+commands = {
+    'pump_water': pump_water_command,
+    'get_plant_metrics': get_plant_metrics_command,
+}
+
+
+async def command_listener(device_client):
     while True:
-        method_request = await device_client.receive_method_request(
-            "pump_water"
-        )  # Wait for method1 calls
-
-        water_plant(get_readings())
-
-        payload = {"result": True}  # set response payload
-        status = 200  # set return status code
-
-        method_response = MethodResponse.create_from_method_request(
-            method_request, status, payload
-        )
-        await device_client.send_method_response(method_response)
-
-
-async def get_plant_metrics_listener(device_client):
-    while True:
-        method_request = await device_client.receive_method_request(
-            "get_plant_metrics"
-        )  # Wait for method1 calls
-
-        readings = get_readings()
-        payload = {"result": True, "data": readings}  # set response payload
-        status = 200  # set return status code
-        print("Sending plant metrics to IoT Hub")
-
-        method_response = MethodResponse.create_from_method_request(
-            method_request, status, payload
-        )
-        await device_client.send_method_response(method_response)
+        method_request = await device_client.receive_method_request()  # Wait for commands
+        await commands[method_request.name](device_client, method_request)
 
 
 def water_plant(readings):
@@ -162,8 +173,7 @@ async def main():
     await device_client.connect()
 
     listeners = asyncio.gather(
-        get_plant_metrics_listener(device_client),
-        pump_water_listener(device_client),
+        command_listener(device_client),
         worker(),
     )
 
@@ -179,6 +189,8 @@ async def main():
     user_finished = loop.run_in_executor(None, stdin_listener)
     await user_finished
 
+    # cancel tasks
+    listeners.add_done_callback(lambda r: r.exception())
     listeners.cancel()
     await device_client.disconnect()
 
