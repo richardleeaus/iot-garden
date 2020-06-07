@@ -2,7 +2,6 @@ import RPi.GPIO as GPIO
 import time
 import logging
 import os
-import psycopg2
 import asyncio
 import threading
 import functools
@@ -16,14 +15,13 @@ from devices.mcp3008 import MoistureSensor
 from devices.dht22 import DHT22
 from devices.relay import Relay
 from db.water_db import WaterDatabase
-from psycopg2.extras import execute_values
-from db.historian import TimescaleDB
 from datetime import datetime
 from azure.iot.device.aio import IoTHubDeviceClient
 from azure.iot.device import MethodResponse, Message
 
-PUMP_SECONDS = 5
-WATERING_DELAY_MINUTES = 5
+PUMP_SECONDS = os.getenv('pump_seconds', 5)
+WATERING_DELAY_MINUTES = os.getenv('watering_delay_minutes', 5)
+MOISTURE_WATERING_LIMIT = os.getenv('moisture_watering_limit', 30)
 
 load_dotenv(find_dotenv())
 logger = logging.getLogger(__name__)
@@ -32,7 +30,6 @@ logger.addHandler(
         connection_string='InstrumentationKey={}'.format(
             os.getenv('log_analytics_instrumentation_key'))))
 logger.setLevel(level=os.environ.get('log_level'))
-
 
 
 async def pump_water_command(device_client, method_request):
@@ -119,7 +116,6 @@ def init():
     pump = Relay()
     dht22 = DHT22()
     localdb = WaterDatabase()
-    historiandb = TimescaleDB()
 
 
 async def send_test_message(i):
@@ -147,16 +143,12 @@ async def worker():
                 tablefmt="simple"))
         print("")
 
-        # Data is sent to the historian via the Azure Function in Azure
-        # records = [(datetime.utcnow(), key, value) for key, value in readings['custom_dimensions'].items()]
-        # historiandb.insert_sensor_records(records)
-
         # Send data to IoT Hub
         await asyncio.gather(send_test_message(dict(readings['custom_dimensions'].items())))
 
         # Only water if there is less than % <moisture>, and have you haven't
         # watered in the last <duration>
-        if readings['custom_dimensions']['soil_moisture_percent'] <= 60 and \
+        if readings['custom_dimensions']['soil_moisture_percent'] <= MOISTURE_WATERING_LIMIT and \
                 localdb.get_pump_seconds_duration_in_last(
                     WATERING_DELAY_MINUTES) == 0:
             water_plant(readings)
