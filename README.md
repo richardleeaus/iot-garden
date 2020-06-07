@@ -4,7 +4,7 @@
 
 | Repository        | Description                                                                                        | Link |   |   |
 |-------------------|----------------------------------------------------------------------------------------------------|------|---|---|
-| iot-garden-azfunc | Python Azure Function used to insert data into TimescaleDB from IoT Hub. Event triggered.          |      |   |   |
+| iot-garden-azfunc | Python Azure Function used to insert data into TimescaleDB from IoT Hub. Event triggered.          |  [Link](https://github.com/richardleeaus/iot-garden-azfunc)    |   |   |
 | iot-garden        | Base repository for Raspberry PI solution. Uses Azure IoT Device SDK and GPIO for reading sensors. |      |   |   |
 |                   |                                                                                                    |      |   |   |
 
@@ -21,10 +21,6 @@ log_analytics_instrumentation_key=<app-insights-instrumentation-key>
 analogue_device=mcp3008
 pin_number_pump=16
 pin_number_dht=12
-tsdb_user=<user>
-tsdb_password=<password>
-tsdb_dbname=<db-name>
-tsdb_host=<host>.postgres.database.azure.com
 log_level=INFO
 pin_clk=18
 pin_miso=23
@@ -58,6 +54,8 @@ $ python3.7 -V
 ```
 
 ## Install psycopg2
+
+We don't need to install psycopg2 on the raspberry pi, but just in case.
 ```bash
 git clone https://github.com/psycopg/psycopg2
 cd psycopg2
@@ -86,6 +84,19 @@ Grafana is an open-source time series visualisation tool
 ## Setup IoT Hub
 
 We use IoT Hub to remotely control the watering system and receive device messages
+
+```sh
+# Add extension and create
+az extension add --name azure-cli-iot-ext
+az iot hub device-identity create --hub-name <your IoT Hub name> --device-id <your device id>
+
+# Get connection string
+az iot hub device-identity show-connection-string --device-id <your device id> --hub-name <your IoT Hub name>
+
+# Monitor events
+az iot hub monitor-events --hub-name <your IoT Hub name> --output table
+```
+
 
 ## Build into Docker container
 

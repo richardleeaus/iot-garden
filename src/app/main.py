@@ -106,7 +106,6 @@ def init():
     global pump
     global dht22
     global localdb
-    global historiandb
     global device_client
 
     conn_str = os.getenv("iot_connection_string")
