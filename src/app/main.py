@@ -73,6 +73,7 @@ commands = {
 async def command_listener(device_client):
     while True:
         method_request = await device_client.receive_method_request()  # Wait for commands
+        print("Command received...")
         await commands[method_request.name](device_client, method_request)
 
 
