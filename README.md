@@ -77,6 +77,38 @@ $ pip install -r requirements.txt --default-timeout=100
 
 TimescaleDB is a time series database and i used to store the telemetry created from the device.
 
+### Azure CLI
+
+```sh
+az postgres up --server-name gardendb-analytics --resource-group iot-plant-home --sku-name b_gen5_1
+
+az postgres server configuration set --resource-group iot-plant-home --name shared_preload_libraries --value timescaledb --server-name gardendb-analytics
+
+az postgres server restart --resource-group iot-plant-home --name garden​db-analytics
+```
+> The above is easiest done from within the Azure cloud shell
+
+> Before connecting with Azure Data Studio, you'll need to disable the server firewall
+
+### Setup database
+```sql
+create database water_garden;
+
+--Change context to water garden DB
+
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
+create table sensor_data (
+    timestamp TIMESTAMPTZ NOT NULL,
+    device TEXT NOT NULL,
+    category TEXT NOT NULL,
+    value DOUBLE PRECISION NULL,
+    state TEXT NULL
+);
+
+SELECT create_hypertable('sensor_data', 'timestamp');
+```
+
 ## Setup Grafana
 
 Grafana is an open-source time series visualisation tool
