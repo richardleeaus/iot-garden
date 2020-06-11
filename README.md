@@ -10,9 +10,30 @@
 
 ## Architecture
 
+> Coming soon
+
 ## Raspberry Pi Pictures
 
-# Getting started
+> Coming soon
+
+## Invoke Remote Functions on Raspberry PI via IoT Hub
+
+> Get sensor readings and start water pump available
+
+## Raspberry PI + Sensors List
+
+> Coming soon
+
+# Getting started with local environment
+
+## Development tools used
+
+- Docker
+- VSCode
+  - Raspian (Remote SSH)
+  - WSL2 (Used for Azure Functions etc)
+- Azure Cloud Shell (For AZ CLI commands)
+
 ## Set up your environment (.env) file
 
 ```xml
@@ -31,26 +52,19 @@ analogue_channel=4
 
 ## Install Python 3.7
 
-If you have raspbian, you may have a old version of Python which isn't compatiable.
+Using raspbian on your Rapberry PI, you may have a old version of Python which isn't compatiable with a few packages.
 
 ```bash
-$ sudo apt-get update
+sudo apt-get update
+sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev
 
-$ sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev
-
-$ wget https://www.python.org/ftp/python/3.7.7/Python-3.7.7.tgz
-
-$ sudo tar zxf Python-3.7.7.tgz
-
-$ cd Python-3.7.7
-
-$ sudo ./configure
-
-$ sudo make -j 4
-
-$ sudo make altinstall
-
-$ python3.7 -V
+wget https://www.python.org/ftp/python/3.7.7/Python-3.7.7.tgz
+sudo tar zxf Python-3.7.7.tgz
+cd Python-3.7.7
+sudo ./configure
+sudo make -j 4
+sudo make altinstall
+python3.7 -V
 ```
 
 ## Install psycopg2
@@ -66,12 +80,12 @@ cd psycopg2
 ## Set up your Virtual Environment
 
 ```bash
-$ python3.7 -m venv ~/GIT/iot-garden/env
-
-$ source env/bin/activate
-
-$ pip install -r requirements.txt --default-timeout=100
+python3.7 -m venv ~/GIT/iot-garden/env
+source env/bin/activate
+pip install -r requirements.txt --default-timeout=100
 ```
+
+# Setup Azure services
 
 ## Setup TimescaleDB
 
@@ -80,19 +94,20 @@ TimescaleDB is a time series database and i used to store the telemetry created 
 ### Azure CLI
 
 ```sh
-az postgres up --server-name gardendb-analytics --resource-group iot-plant-home --sku-name b_gen5_1
+servername="gardendb-analytics"
+resourcegroup="iot-plant-home"
+skuname="b_gen5_1"
 
-az postgres server configuration set --resource-group iot-plant-home --name shared_preload_libraries --value timescaledb --server-name gardendb-analytics
-
-az postgres server restart --resource-group iot-plant-home --name garden​db-analytics
+az postgres up --server-name $servername --resource-group $resourcegroup --sku-name $skuname
+az postgres server configuration set --resource-group $resourcegroup --name shared_preload_libraries --value timescaledb --server-name $servername
+az postgres server restart --resource-group $resourcegroup --name $servername
 ```
-> The above is easiest done from within the Azure cloud shell
 
-> Before connecting with Azure Data Studio, you'll need to disable the server firewall
+> Before connecting with Azure Data Studio, you'll need to add your IP to the firewall
 
 ### Setup database
 ```sql
-create database water_garden;
+create database plant_monitor;
 
 --Change context to water garden DB
 
@@ -108,10 +123,6 @@ create table sensor_data (
 
 SELECT create_hypertable('sensor_data', 'timestamp');
 ```
-
-## Setup Grafana
-
-Grafana is an open-source time series visualisation tool
 
 ## Setup IoT Hub
 
@@ -129,13 +140,36 @@ az iot hub device-identity show-connection-string --device-id <your device id> -
 az iot hub monitor-events --hub-name <your IoT Hub name> --output table
 ```
 
+## Setup Event Hub for Anomaly Detection
 
-## Build into Docker container
+```sh
+ns="anomaly-output-eh"
+rg="iot-plant-home"
+eventhub="anomalies"
+
+# Create an Event Hubs namespace. Specify a name for the Event Hubs namespace.
+az eventhubs namespace create --name $ns --resource-group $rg
+
+# Create an event hub. Specify a name for the event hub. 
+az eventhubs eventhub create --name $eventhub --resource-group $rg --namespace-name $ns
+```
+
+# Setup local visualisation
+
+## Grafana
+
+Grafana is an open-source time series visualisation tool
 
 
-# Just run with Docker
+# Build Docker container
+
+> Coming soon
+
+# Run from Docker Compose
 
 ```bash
 $ docker-compose up
 ```
+
+> Coming soon
 
