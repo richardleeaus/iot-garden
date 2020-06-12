@@ -2,10 +2,10 @@
 
 ## Project Repositories
 
-| Repository        | Description                                                                                        | Link |   
-|-------------------|----------------------------------------------------------------------------------------------------|------|
+| Repository        | Description                                                                                        | Link                                                           |   
+|-------------------|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | iot-garden-azfunc | Python Azure Function used to insert data into TimescaleDB from IoT Hub. Event triggered.          |  [Link](https://github.com/richardleeaus/iot-garden-azfunc)    |   
-| iot-garden        | Base repository for Raspberry PI solution. Uses Azure IoT Device SDK and GPIO for reading sensors. |      |   
+| iot-garden        | Base repository for Raspberry PI solution. Uses Azure IoT Device SDK and GPIO for reading sensors. |                                                                |   
  
 
 ## Architecture
@@ -18,7 +18,15 @@
 
 ## Invoke Remote Functions on Raspberry PI via IoT Hub
 
-> Get sensor readings and start water pump available
+The below functions are examples that can be leveraged by applications that need to interact with your IoT device.
+
+### Remote function `pump_water`
+
+Function used to trigger the water pump remotely
+
+### Remote function `get_plant_metrics`
+
+Function used to retrieve the sensor metrics from the Raspberry PI
 
 ## Raspberry PI + Sensors List
 
@@ -28,10 +36,18 @@
 
 ## Development tools used
 
-- Docker
+- Docker for Windows
 - VSCode
-  - Raspian (Remote SSH)
-  - WSL2 (Used for Azure Functions etc)
+  - Extensions
+    - Docker
+    - Remote WSL
+    - Remote SSH
+    - Python
+    - Azure Functions
+    - Azure Account
+- OS
+  - Raspian (Raspberry PI)
+  - WSL2 (For cross-platform development on Windows 10)
 - Azure Cloud Shell (For AZ CLI commands)
 
 ## Set up your environment (.env) file
@@ -89,7 +105,7 @@ pip install -r requirements.txt --default-timeout=100
 
 ## Setup TimescaleDB
 
-TimescaleDB is a time series database and i used to store the telemetry created from the device.
+TimescaleDB is a time series database used to store the telemetry created from the device.
 
 ### Azure CLI
 
@@ -129,15 +145,23 @@ SELECT create_hypertable('sensor_data', 'timestamp');
 We use IoT Hub to remotely control the watering system and receive device messages
 
 ```sh
+iothubname=""
+rg="iot-plant-home"
+rpi-device-id="raspberrypi3"
+
 # Add extension and create
 az extension add --name azure-cli-iot-ext
-az iot hub device-identity create --hub-name <your IoT Hub name> --device-id <your device id>
+
+az iot hub create --name $iothubname \
+   --resource-group $rg --sku S1
+
+az iot hub device-identity create --hub-name $iothubname --device-id $rpi-device-id
 
 # Get connection string
-az iot hub device-identity show-connection-string --device-id <your device id> --hub-name <your IoT Hub name>
+az iot hub device-identity show-connection-string --device-id $rpi-device-id --hub-name $iothubname
 
 # Monitor events
-az iot hub monitor-events --hub-name <your IoT Hub name> --output table
+az iot hub monitor-events --hub-name $iothubname --output table
 ```
 
 ## Setup Event Hub for Anomaly Detection
