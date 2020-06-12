@@ -1,5 +1,12 @@
 # IoT Garden
 
+IoT enabled solution to keep your plant alive!
+  - Automated watering system
+  - Soil moisture, temperature and humidity sensors
+  - Anomaly analysis of telemtry
+  - Computer vision to understand health of plant
+  - Grafana to track plant health in real-time
+
 ## Project Repositories
 
 | Repository        | Description                                                                                        | Link                                                           |   
