@@ -10,7 +10,8 @@
 
 ## Architecture
 
-> Coming soon
+<img src="./docs/images/plant_analytics_architecture.png" alt="drawing" width="900"/>
+
 
 ## Raspberry Pi Pictures
 
@@ -125,7 +126,7 @@ az postgres server restart --resource-group $resourcegroup --name $servername
 ```sql
 create database plant_monitor;
 
---Change context to water garden DB
+--Change context to new db
 
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
