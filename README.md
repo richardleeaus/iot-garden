@@ -109,6 +109,11 @@ source env/bin/activate
 pip install -r requirements.txt --default-timeout=100
 ```
 
+## Install Grove package
+```bash
+curl -sL https://github.com/Seeed-Studio/grove.py/raw/master/install.sh | sudo bash -s -
+```
+
 # Setup Azure services
 
 ## Setup TimescaleDB

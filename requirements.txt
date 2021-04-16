@@ -8,3 +8,4 @@ weather-au
 RPi.GPIO
 Adafruit_DHT
 tabulate
+smbus

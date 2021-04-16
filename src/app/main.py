@@ -11,7 +11,8 @@ import json
 from tabulate import tabulate
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from dotenv import load_dotenv, find_dotenv
-from devices.mcp3008 import MoistureSensor
+# from devices.mcp3008 import MoistureSensor
+from devices.moisture_sensor import MoistureSensor
 from devices.dht22 import DHT22
 from devices.relay import Relay
 from db.water_db import WaterDatabase
@@ -37,7 +38,7 @@ async def pump_water_command(device_client, method_request):
     #     "pump_water"
     # )  # Wait for method1 calls
 
-    water_plant(get_readings())
+    water_plant()
 
     payload = {"result": True}  # set response payload
     status = 200  # set return status code
@@ -77,7 +78,7 @@ async def command_listener(device_client):
         await commands[method_request.name](device_client, method_request)
 
 
-def water_plant(readings):
+def water_plant():
     print('Watering plant!')
     pump.trigger(PUMP_SECONDS)
 
@@ -87,15 +88,17 @@ def water_plant(readings):
 
 def get_readings():
     # Read the moisture sensor data
-    moisture_level = moisture_sensor.ReadChannel()
+    moisture_level = moisture_sensor.get_moisture()
     moisture_percent_scaled = moisture_sensor.GetScaledPercent()
-    humidity, temperature = dht22.take_reading()
+    # humidity, temperature = dht22.take_reading()
+    temperature,pressure,humidity = bme280.readBME280All()
 
     readings = {
         'custom_dimensions': {
             'soil_moisture_percent': moisture_percent_scaled,
             'humidity': humidity,
-            'temperature': temperature
+            'temperature': temperature,
+            'pressure': pressure
         }
     }
     logger.info('Plant log', extra=readings)
@@ -114,7 +117,9 @@ def init():
 
     moisture_sensor = MoistureSensor()
     pump = Relay()
-    dht22 = DHT22()
+    # Using Grove PI instead
+    # dht22 = DHT22()
+    bme280 = BME280()
     localdb = WaterDatabase()
 
 
