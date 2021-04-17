@@ -7,7 +7,7 @@ load_dotenv(find_dotenv())
 
 class Relay(object):
     def __init__(self):
-        self.pin = os.getenv('pin_number_pump')
+        self.pin = int(os.getenv('io_channel_pump'))
         self.relay = GroveRelay(self.pin)
 
     def trigger(self):

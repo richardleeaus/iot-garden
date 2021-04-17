@@ -11,9 +11,9 @@ import json
 from tabulate import tabulate
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from dotenv import load_dotenv, find_dotenv
-# from devices.mcp3008 import MoistureSensor
 from devices.moisture_sensor import MoistureSensor
 from devices.dht22 import DHT22
+from devices.bme280 import BME280
 from devices.relay import Relay
 from db.water_db import WaterDatabase
 from datetime import datetime
@@ -90,7 +90,6 @@ def get_readings():
     # Read the moisture sensor data
     moisture_level = moisture_sensor.get_moisture()
     moisture_percent_scaled = moisture_sensor.GetScaledPercent()
-    # humidity, temperature = dht22.take_reading()
     temperature,pressure,humidity = bme280.readBME280All()
 
     readings = {
@@ -107,6 +106,7 @@ def get_readings():
 
 def init():
     global moisture_sensor
+    global bme280
     global pump
     global dht22
     global localdb
@@ -117,8 +117,6 @@ def init():
 
     moisture_sensor = MoistureSensor()
     pump = Relay()
-    # Using Grove PI instead
-    # dht22 = DHT22()
     bme280 = BME280()
     localdb = WaterDatabase()
 
@@ -156,14 +154,14 @@ async def worker():
         if readings['custom_dimensions']['soil_moisture_percent'] <= MOISTURE_WATERING_LIMIT and \
                 localdb.get_pump_seconds_duration_in_last(
                     WATERING_DELAY_MINUTES) == 0:
-            water_plant(readings)
+            water_plant()
             await asyncio.gather(send_test_message({
                 "water_duration_seconds": PUMP_SECONDS
             }))
 
         # Wait before repeating loop
-        logger.info('Waiting for {} seconds'.format(moisture_sensor.delay))
-        time.sleep(moisture_sensor.delay)
+        logger.info('Waiting for {} seconds'.format(30))
+        time.sleep(30)
 
 
 async def main():

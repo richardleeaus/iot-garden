@@ -1,15 +1,18 @@
 import smbus
 import time
+import os
 from ctypes import c_short
 from ctypes import c_byte
 from ctypes import c_ubyte
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 class BME280(object):
 
     def __init__(self):
         self.bus = smbus.SMBus(1) # Rev 2 Pi, Pi 2 & Pi 3 uses bus 1
                                   # Rev 1 Pi uses bus 0
-        self.DEVICE = 0x76 # Default device I2C address
+        self.DEVICE = 0x76 # int(os.environ.get("i2c_channel_bme")) # Default device I2C address
 
     def getShort(self, data, index):
       # return two bytes from data as a signed 16-bit value
@@ -35,7 +38,7 @@ class BME280(object):
       addr = self.DEVICE
       # Chip ID Register Address
       REG_ID     = 0xD0
-      (chip_id, chip_version) = bus.read_i2c_block_data(addr, REG_ID, 2)
+      (chip_id, chip_version) = self.bus.read_i2c_block_data(addr, REG_ID, 2)
       return (chip_id, chip_version)
 
     def readBME280All(self):
@@ -56,16 +59,16 @@ class BME280(object):
 
       # Oversample setting for humidity register - page 26
       OVERSAMPLE_HUM = 2
-      bus.write_byte_data(addr, REG_CONTROL_HUM, OVERSAMPLE_HUM)
+      self.bus.write_byte_data(addr, REG_CONTROL_HUM, OVERSAMPLE_HUM)
 
       control = OVERSAMPLE_TEMP<<5 | OVERSAMPLE_PRES<<2 | MODE
-      bus.write_byte_data(addr, REG_CONTROL, control)
+      self.bus.write_byte_data(addr, REG_CONTROL, control)
 
       # Read blocks of calibration data from EEPROM
       # See Page 22 data sheet
-      cal1 = bus.read_i2c_block_data(addr, 0x88, 24)
-      cal2 = bus.read_i2c_block_data(addr, 0xA1, 1)
-      cal3 = bus.read_i2c_block_data(addr, 0xE1, 7)
+      cal1 = self.bus.read_i2c_block_data(addr, 0x88, 24)
+      cal2 = self.bus.read_i2c_block_data(addr, 0xA1, 1)
+      cal3 = self.bus.read_i2c_block_data(addr, 0xE1, 7)
 
       # Convert byte data to word values
       dig_T1 = self.getUShort(cal1, 0)
@@ -101,7 +104,7 @@ class BME280(object):
       time.sleep(wait_time/1000)  # Wait the required time  
 
       # Read temperature/pressure/humidity
-      data = bus.read_i2c_block_data(addr, REG_DATA, 8)
+      data = self.bus.read_i2c_block_data(addr, REG_DATA, 8)
       pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
       temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
       hum_raw = (data[6] << 8) | data[7]

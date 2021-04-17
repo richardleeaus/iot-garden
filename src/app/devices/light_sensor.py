@@ -1,13 +1,16 @@
 import math
 import sys
 import time
+import os
 from grove.adc import ADC
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 
 class GroveLightSensor:
 
-    def __init__(self, channel):
-        self.channel = channel
+    def __init__(self):
+        self.channel = int(os.environ.get("analogue_channel_light"))
         self.adc = ADC()
 
     @property
@@ -15,15 +18,9 @@ class GroveLightSensor:
         value = self.adc.read(self.channel)
         return value
 
-Grove = GroveLightSensor
-
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage: {} adc_channel'.format(sys.argv[0]))
-        sys.exit(1)
-
-    sensor = GroveLightSensor(int(sys.argv[1]))
+    sensor = GroveLightSensor()
 
     print('Detecting light...')
     while True:
